@@ -1,0 +1,15 @@
+#!/bin/bash
+
+export EXTERNAL_IFACE="enp1s0"
+
+ip link set "${INTERFACE}" up
+avahi-autoipd --daemonize --wait "${INTERFACE}"
+
+echo 1 >"/proc/sys/net/ipv4/ip_forward"
+
+# On accepte tout ce qui vient de l'interface tun0
+iptables --append "FORWARD" --in-interface "${INTERFACE}" --jump "ACCEPT"
+iptables --append "FORWARD" --in-interface "${INTERFACE}" --out-interface "${EXTERNAL_IFACE}" --match "state" --state "RELATED,ESTABLISHED" --jump "ACCEPT"
+iptables --append "FORWARD" --in-interface "${EXTERNAL_IFACE}" --out-interface "${INTERFACE}" --match "state" --state "RELATED,ESTABLISHED" --jump "ACCEPT"
+iptables --table "nat" --append "POSTROUTING" --source "169.254.0.0/16" --out-interface "${EXTERNAL_IFACE}" --jump "MASQUERADE"
+iptables --append "OUTPUT" --out-interface "${INTERFACE}" --jump "ACCEPT"
