@@ -44,50 +44,19 @@ set_up()
   info "Allow IP forward"
   echo 1 >"/proc/sys/net/ipv4/ip_forward"
 
-  #info "Create ${TABLE} table"
-  # ?
+  info "Setting up ${TABLE} table"
   ip route add "169.254.0.0/16" dev "${VPN_IFACE}" src "${vpn_ip}" table "${TABLE}"
   ip route add "192.168.0.0/24" via "${external_gateway_ip}" dev "${EXTERNAL_IFACE}" src "${external_ip}" table "${TABLE}"
-
-  # DNS and Kimsufi
-  ip route add "${KIMSUFI_EXTERNAL_IP}" via "${external_gateway_ip}" src "${external_ip}" table "${TABLE}"
-  ip route add "${DNS_IP}" via "${external_gateway_ip}" src "${external_ip}" table "${TABLE}"
-
-  # Default route
   ip route add default via "${vpn_gateway_ip}" dev "${VPN_IFACE}" src "${vpn_ip}" table "${TABLE}"
-  #ip route add "0.0.0.0/1" via "${vpn_gateway_ip}" dev "${VPN_IFACE}" src "${vpn_ip}" table "${TABLE}"
-
-  # Apply
-  #ip route add default via 169.254.11.248 dev tun0 src 169.254.9.9 table "${TABLE}"
-  #ip route add 8.8.8.8 via 192.168.0.254 dev wlp3s0 table "${TABLE}"
-  #ip route add 91.121.210.84 via 192.168.0.254 dev wlp3s0 table "${TABLE}"
-  #ip route add 169.254.0.0/16 dev tun0 proto kernel scope link src 169.254.9.9 table "${TABLE}"
-  #ip route add 192.168.0.0/24 dev wlp3s0 proto kernel scope link src 192.168.0.14 metric 600 table "${TABLE}"
-  #ip route flush cache
-
-  #iptables -I INPUT -i tun0 -j REJECT
-  #iptables -t nat -A POSTROUTING -o tun0 -j MASQUERADE
-
 
   info "Marking packet send by ${USER} with ${MARK} mark"
   iptables --table "mangle" --append "OUTPUT" --match "owner" --uid-owner "${USER}" --jump "MARK" --set-mark "${MARK}"
-  #iptables --table "mangle" --append "OUTPUT" --match "owner" --uid-owner "${USER}" --jump "CONNMARK" --save-mark
-
-
-  #iptables -A INPUT -i "${VPN_IFACE}" -m conntrack --ctstate ESTABLISHED -j ACCEPT
-  #iptables -t nat -A POSTROUTING -o "${VPN_IFACE}" -j MASQUERADE
 
   info "Adding routing policy on ${MARK} mark to ${TABLE} table"
   ip rule add fwmark "${MARK}" priority "100" table "${TABLE}"
 
   info "Changing source address to ${vpn_ip}"
   iptables --table "nat" --append "POSTROUTING" --out-interface "${VPN_IFACE}" --match "mark" --mark "${MARK}" --jump "SNAT" --to-source "${vpn_ip}"
-
-  #for i in /proc/sys/net/ipv4/conf/*/rp_filter; do echo 0 > "$i"; done
-  #echo 2 > /proc/sys/net/ipv4/conf/tun0/rp_filter
-
-  #iptables -t mangle -A PREROUTING -j CONNMARK --restore-mark
-  #iptables -t mangle -A OUTPUT -j CONNMARK --restore-mark
 }
 
 tear_down()

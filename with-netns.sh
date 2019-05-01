@@ -21,6 +21,7 @@ export MARK="0xa"
 export NETNS_NAME="vpn"
 export SUBNET_NUMBER=1
 export TABLE_NAME="vpn"
+export MARK="0xa"
 
 check_connectivity()
 {
@@ -55,19 +56,12 @@ set_up()
 
   ip route add default via "${vpn_gateway_ip}" dev "${VPN_IFACE}" src "${vpn_ip}" table "${TABLE_NAME}"
   ip rule add from "10.10.1.11/31" table "${TABLE_NAME}"
+  ip route flush cache
+
+  ip rule add fwmark "${MARK}" priority "100" table "${TABLE}"
+  iptables --table "nat" --append "PREROUTING" --source "10.10.1.11/31" --jump "MARK" --set-mark "${MARK}"
+
   iptables --table "nat" --append "POSTROUTING" --out-interface "${VPN_IFACE}" --jump "SNAT" --to-source "${vpn_ip}"
-
-  #ip route add nat 205.254.211.17 via 192.168.100.17
-  #ip rule add nat 205.254.211.17 from 192.168.100.17
-  #ip route flush cache
-
-  #iptables --table "nat" --append "POSTROUTING" --source "10.10.1.11/31" --out-interface "${VPN_IFACE}" --jump "MASQUERADE"
-  #iptables --append "FORWARD" --out-interface "${VPN_IFACE}" --in-interface "$( veth_iface "${VPN_IFACE}" )" --jump "ACCEPT"
-  #iptables --append "FORWARD" --in-interface "${VPN_IFACE}" --out-interface "$( veth_iface "${VPN_IFACE}" )" --jump "ACCEPT"
-
-  #iptables --table "nat" --append "POSTROUTING" --source "10.10.1.11/31" --out-interface "${EXTERNAL_IFACE}" --jump "SNAT" --to-source "${external_ip}"
-  #iptables --table "nat" --append "POSTROUTING" --source "10.10.1.11/31" --out-interface "${VPN_IFACE}" --destination "169.254.0.0/16" --jump "SNAT" --to-source "${vpn_ip}"
-
 }
 
 tear_down()

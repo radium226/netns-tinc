@@ -18,5 +18,5 @@ debug()
 die()
 {
   error "${@}"
-  exit ${FAILURE}
+  exit ${CODE_FAILURE}
 }
