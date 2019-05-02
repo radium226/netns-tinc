@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-for source_file_name in $( ls -1 "./sources.d" | sort ); do
-  source "./sources.d/${source_file_name}"
+for source_file_name in $( ls -1 "./functions.d" | sort ); do
+  source "./functions.d/${source_file_name}"
 done
 
 
@@ -13,7 +13,7 @@ export VPN_IFACE="tun0"
 export EXTERNAL_IFACE="wlp3s0"
 
 export KIMSUFI_EXTERNAL_IP="91.121.210.84"
-export KIMSUFI_INTERNAL_IP="169.254.11.248"
+export KIMSUFI_INTERNAL_IP="$( avahi-resolve -4 -n "kimsufi-01.local" | cut -d"	" -f2 )"
 
 export DNS_IP="8.8.8.8"
 
