@@ -8,7 +8,7 @@ check()
   declare alter_command="${1}" ; shift
 
   declare alter=
-  for alter in true false; do
+  for alter in $( if [[ "${alter_command}" = "true" ]]; then echo "false"; else echo "true false"; fi ); do
     echo -en "      - ["
     set +e
     declare output
